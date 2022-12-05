@@ -1,0 +1,19 @@
+---
+title: "EDA"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Load in the data.
+
+```{r}
+db_binary <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary.csv")
+db_5050 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary_5050split.csv")
+db_012 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_012.csv")
+```
+
