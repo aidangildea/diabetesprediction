@@ -9,11 +9,87 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 
+```{r library}
+library(corrplot)
+library(ggplot2)
+library(magrittr)
+library(tibble)
+library(ggcorrplot)
+```
+
+
 Load in the data.
 
 ```{r}
 db_binary <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary.csv")
 db_5050 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary_5050split.csv")
 db_012 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_012.csv")
+
+# Making all categorical variables into factors
+# cols <- names(db_012) %in% c("BMI", "MentHlth", "PhysHlth", "Age")
+# db_012[!cols] <- data.frame(lapply(db_012[!cols], factor))
+# tibble(db_012)
+```
+
+We can begin by creating correlation matrix plots to assess if there are any predictors with significant correlation towards our response variable `Diabetes_012`. There are 21 predictors, and therefore, creating one correlation matrix plot would be busy and difficult to understand. Since we are using a correlation matrix plot to investigate the predictors' correlation with the response - and not one another - splitting the variables into three visualizations is appropriate.
+
+```{r corplots}
+first_vars <- db_012[1:8]
+second_vars <- db_012[c(1,9:15)]
+third_vars <- db_012[c(1,16:22)]
+
+# model.matrix(Diabetes_012 ~ ., data=first_vars) %>% 
+#   cor(use="pairwise.complete.obs") %>% 
+#   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
+# 
+# model.matrix(Diabetes_012 ~ ., data=second_vars) %>% 
+#   cor(use="pairwise.complete.obs") %>% 
+#   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
+# 
+# model.matrix(Diabetes_012 ~ ., data=third_vars) %>% 
+#   cor(use="pairwise.complete.obs") %>% 
+#   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
+
+corrplot.mixed(cor(first_vars),
+               lower = "number", 
+               upper = "circle", 
+               tl.pos = "lt")
+corrplot.mixed(cor(second_vars),
+               lower = "number", 
+               upper = "circle", 
+               tl.pos = "lt")
+corrplot.mixed(cor(third_vars),
+               lower = "number", 
+               upper = "circle", 
+               tl.pos = "lt")
+
+# corrplot(cor(db_012[1:8]))
+# corrplot(cor(db_012[c(1,9:15)]))
+# corrplot(cor(db_012[c(1,16:22)]))
+```
+
+From the correlation matrix plots, it seems that there are 12 significant main effects on our response variable `Diabetes_012`. There are nine variables (`HighBP`, `HighChol`, `BMI`, `Stroke`, `HeartDiseaseorAttack`,  `GenHlth`, `PhysHealth`, `DiffWalk`, `Age`) that demonstrate a significant positive correlation with our response, while there are three variables (`PhysActivity`, `Education`, `Income`) with a significant negative correlation.
+
+We should validate these assumptions from the correlation matrix plots by developing additional exploratory visualizations between our predictors of interest and the response. 
+
+```{r viz}
+bmi_plot <- ggplot(db_012, aes(factor(Diabetes_012), BMI)) +
+  geom_boxplot() +
+  labs(title = 'Diabetes And BMI', x = "Diabetes_012", y = "BMI")
+bmi_plot
+
+bp_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(HighBP))) +
+  geom_bar(position = "fill") +
+  labs(title = 'Diabetes And HighBP', x = "Diabetes_012", y = "Count", 
+       fill = "HighBP") +
+    scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
+bp_plot
+
+chol_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(HighChol))) +
+  geom_bar(position = "fill") +
+  labs(title = 'Diabetes And HighChol', x = "Diabetes_012", y = "Count", 
+       fill = "HighChol") +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
+chol_plot
 ```
 
