@@ -24,22 +24,26 @@ require(nnet)
 Load in the data.
 
 ```{r}
-#db_binary <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary.csv")
-#db_5050 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary_5050split.csv")
-#db_012 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_012.csv")
-
 db_binary <- read_csv("diabetes_binary.csv")
 db_5050 <- read_csv("diabetes_binary_5050split.csv")
 db_012 <- read_csv("diabetes_012.csv")
 
-#db_binary <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_binary.csv")
-#db_5050 <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_012.csv")
-#db_012 <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_012.csv")
+# Binning `Age` into less more understandable categories
+db_binary <- db_binary %>%
+  mutate(Age = case_when(
+    Age <= 4 ~ "18-39" ,
+    Age > 4 & Age <=8 ~ "40-59" ,
+    Age > 8 ~ "60+"
+  ))
 
 # Making all categorical variables into factors
-# cols <- names(db_012) %in% c("BMI", "MentHlth", "PhysHlth")
-# db_012[!cols] <- data.frame(lapply(db_012[!cols], factor))
-# tibble(db_012)
+cols <- names(db_012) %in% c("BMI", "MentHlth", "PhysHlth")
+db_binary[!cols] <- data.frame(lapply(db_binary[!cols], factor))
+
+# Coercing `PhysHlth` and "MentHlth` to integer type
+db_binary["PhysHlth"] <- data.frame(lapply(db_binary["PhysHlth"], as.integer))
+db_binary["MentHlth"] <- data.frame(lapply(db_binary["MentHlth"], as.integer))
+tibble(db_binary)
 ```
 
 We can begin by creating correlation matrix plots to assess if there are any predictors with significant correlation towards our response variable `Diabetes_012`. There are 21 predictors, and therefore, creating one correlation matrix plot would be busy and difficult to understand. Since we are using a correlation matrix plot to investigate the predictors' correlation with the response - and not one another - splitting the variables into three visualizations is appropriate.
