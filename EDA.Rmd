@@ -15,15 +15,21 @@ library(ggplot2)
 library(magrittr)
 library(tibble)
 library(ggcorrplot)
+library(tidyverse)
+library(ISLR)
 ```
 
 
 Load in the data.
 
 ```{r}
-db_binary <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary.csv")
-db_5050 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary_5050split.csv")
-db_012 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_012.csv")
+#db_binary <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary.csv")
+#db_5050 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary_5050split.csv")
+#db_012 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_012.csv")
+
+db_binary <- read_csv("diabetes_binary.csv")
+db_5050 <- read_csv("diabetes_binary_5050split.csv")
+db_012 <- read_csv("diabetes_012.csv")
 
 # Making all categorical variables into factors
 # cols <- names(db_012) %in% c("BMI", "MentHlth", "PhysHlth", "Age")
@@ -68,7 +74,7 @@ corrplot.mixed(cor(third_vars),
 # corrplot(cor(db_012[c(1,16:22)]))
 ```
 
-From the correlation matrix plots, it seems that there are 12 significant main effects on our response variable `Diabetes_012`. There are nine variables (`HighBP`, `HighChol`, `BMI`, `Stroke`, `HeartDiseaseorAttack`,  `GenHlth`, `PhysHealth`, `DiffWalk`, `Age`) that demonstrate a significant positive correlation with our response, while there are three variables (`PhysActivity`, `Education`, `Income`) with a significant negative correlation.
+From the correlation matrix plots, it seems that there are 12 significant main effects on our response variable `Diabetes_012`. There are nine variables (`HighBP`, `HighChol`, `BMI`, `Stroke`, `HeartDiseaseorAttack`,  `GenHlth`, `PhysHlth`, `DiffWalk`, `Age`) that demonstrate a significant positive correlation with our response, while there are three variables (`PhysActivity`, `Education`, `Income`) with a significant negative correlation.
 
 We should validate these assumptions from the correlation matrix plots by developing additional exploratory visualizations between our predictors of interest and the response. 
 
@@ -91,5 +97,41 @@ chol_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(HighChol
        fill = "HighChol") +
   scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
 chol_plot
+
+stroke_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(Stroke))) +
+  geom_bar(position = "fill") +
+  labs(title = 'Diabetes And Stroke', x = "Diabetes_012", y = "Count", 
+       fill = "Stroke") +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
+stroke_plot
+
+heart_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(HeartDiseaseorAttack))) +
+  geom_bar(position = "fill") +
+  labs(title = 'Diabetes And Heart Disease or Attack', x = "Diabetes_012", y = "Count", 
+       fill = "Heart Disease or Attack") +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
+heart_plot
+
+genhealth_plot <- ggplot(db_012, aes(factor(Diabetes_012), GenHlth)) +
+  geom_boxplot() +
+  labs(title = 'Diabetes And General Health', x = "Diabetes_012", y = "General Health")
+genhealth_plot
+
+physhealth_plot <- ggplot(db_012, aes(factor(Diabetes_012), PhysHlth)) +
+  geom_boxplot() +
+  labs(title = 'Diabetes And Physical Health', x = "Diabetes_012", y = "Physical Health")
+physhealth_plot
+
+diffwalk_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(DiffWalk))) +
+  geom_bar(position = "fill") +
+  labs(title = 'Diabetes And Difficulty Walking', x = "Diabetes_012", y = "Count", 
+       fill = "Difficulty Walking") +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
+diffwalk_plot
+
+age_plot <- ggplot(db_012, aes(factor(Diabetes_012), Age)) +
+  geom_boxplot() +
+  labs(title = 'Diabetes And Age', x = "Diabetes_012", y = "Age")
+age_plot
 ```
 
