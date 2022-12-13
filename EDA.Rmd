@@ -31,6 +31,10 @@ db_binary <- read_csv("diabetes_binary.csv")
 db_5050 <- read_csv("diabetes_binary_5050split.csv")
 db_012 <- read_csv("diabetes_012.csv")
 
+#db_binary <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_binary.csv")
+#db_5050 <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_012.csv")
+#db_012 <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_012.csv")
+
 # Making all categorical variables into factors
 # cols <- names(db_012) %in% c("BMI", "MentHlth", "PhysHlth", "Age")
 # db_012[!cols] <- data.frame(lapply(db_012[!cols], factor))
@@ -133,5 +137,12 @@ age_plot <- ggplot(db_012, aes(factor(Diabetes_012), Age)) +
   geom_boxplot() +
   labs(title = 'Diabetes And Age', x = "Diabetes_012", y = "Age")
 age_plot
+```
+
+Next, we will evaluate whether our continuous variable, BMI, is skewed:
+
+```{r hist}
+ggplot(db_012, aes(x = BMI)) + 
+  geom_histogram(fill = "blue", binwidth = 2)
 ```
 
