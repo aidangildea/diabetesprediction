@@ -17,6 +17,7 @@ library(tibble)
 library(ggcorrplot)
 library(tidyverse)
 library(ISLR)
+require(nnet)
 ```
 
 
@@ -88,6 +89,15 @@ bmi_plot <- ggplot(db_012, aes(factor(Diabetes_012), BMI)) +
   labs(title = 'Diabetes And BMI', x = "Diabetes_012", y = "BMI")
 bmi_plot
 
+median_df <- db_012 %>%
+  group_by(Diabetes_012) %>%
+  summarize(median=median(BMI))
+
+ggplot(data = db_012, mapping = aes(x = BMI, colour = factor(Diabetes_012))) +
+  geom_freqpoly(binwidth = 1) +
+  geom_vline(data = median_df, aes(xintercept = median, 
+                                       color = factor(Diabetes_012)), linetype = "dotted")
+
 bp_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(HighBP))) +
   geom_bar(position = "fill") +
   labs(title = 'Diabetes And HighBP', x = "Diabetes_012", y = "Count", 
@@ -144,5 +154,10 @@ Next, we will evaluate whether our continuous variable, BMI, is skewed:
 ```{r hist}
 ggplot(db_012, aes(x = BMI)) + 
   geom_histogram(fill = "blue", binwidth = 2)
+```
+
+```{r multi-log-model}
+multi_model_1 <- multinom(Diabetes_012 ~ ., data = db_012)
+summary(multi_model_1)
 ```
 
