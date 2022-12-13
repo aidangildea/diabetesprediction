@@ -37,7 +37,7 @@ db_012 <- read_csv("diabetes_012.csv")
 #db_012 <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_012.csv")
 
 # Making all categorical variables into factors
-# cols <- names(db_012) %in% c("BMI", "MentHlth", "PhysHlth", "Age")
+# cols <- names(db_012) %in% c("BMI", "MentHlth", "PhysHlth")
 # db_012[!cols] <- data.frame(lapply(db_012[!cols], factor))
 # tibble(db_012)
 ```
@@ -156,8 +156,17 @@ ggplot(db_012, aes(x = BMI)) +
   geom_histogram(fill = "blue", binwidth = 2)
 ```
 
-```{r multi-log-model}
-multi_model_1 <- multinom(Diabetes_012 ~ ., data = db_012)
-summary(multi_model_1)
+```{r dset-glimpse}
+glimpse(db_binary)
+```
+
+```{r starter-log-model}
+log_model_1 <- glm(Diabetes_binary ~ ., data = db_binary, family = "binomial")
+summary(log_model_1)
+```
+
+```{r interactions-log-model}
+log_model_2 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol, data = db_binary, family = "binomial")
+summary(log_model_2)
 ```
 
