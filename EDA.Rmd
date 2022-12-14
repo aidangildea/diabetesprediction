@@ -19,23 +19,24 @@ library(tidyverse)
 library(ISLR)
 library(ggmosaic)
 require(nnet)
+library(car)
 ```
 
 
 Load in the data.
 
 ```{r}
+#db_binary <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary.csv")
+#db_5050 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary_5050split.csv")
+#db_012 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_012.csv")
+
 db_binary <- read_csv("diabetes_binary.csv")
 db_5050 <- read_csv("diabetes_binary_5050split.csv")
 db_012 <- read_csv("diabetes_012.csv")
 
-# Binning `Age` into less more understandable categories
-db_binary <- db_binary %>%
-  mutate(Age = case_when(
-    Age <= 4 ~ "18-39" ,
-    Age > 4 & Age <=8 ~ "40-59" ,
-    Age > 8 ~ "60+"
-  ))
+#db_binary <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_binary.csv")
+#db_5050 <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_012.csv")
+#db_012 <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_012.csv")
 
 # Making all categorical variables into factors
 cols <- names(db_binary) %in% c("BMI", "MentHlth", "PhysHlth")
@@ -146,7 +147,25 @@ summary(log_model_1)
 ```
 
 ```{r interactions-log-model}
-log_model_2 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol, data = db_binary, family = "binomial")
+log_model_2 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
 summary(log_model_2)
+```
+
+```{r larger-interactions-log-model}
+log_model_3 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP + Sex * MentHlth, data = db_binary, family = "binomial")
+summary(log_model_3)
+```
+
+```{r multi-collinearity}
+vif(log_model_1)
+vif(log_model_2)
+vif(log_model_3)
+```
+
+```{r anova}
+anova(log_model_2, log_model_3, test ="Chisq")
+anova(log_model_1)
+anova(log_model_2)
+anova(log_model_3)
 ```
 
