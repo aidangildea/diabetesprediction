@@ -17,6 +17,7 @@ library(tibble)
 library(ggcorrplot)
 library(tidyverse)
 library(ISLR)
+library(ggmosaic)
 require(nnet)
 ```
 
@@ -37,7 +38,7 @@ db_binary <- db_binary %>%
   ))
 
 # Making all categorical variables into factors
-cols <- names(db_012) %in% c("BMI", "MentHlth", "PhysHlth")
+cols <- names(db_binary) %in% c("BMI", "MentHlth", "PhysHlth")
 db_binary[!cols] <- data.frame(lapply(db_binary[!cols], factor))
 
 # Coercing `PhysHlth` and "MentHlth` to integer type
@@ -48,39 +49,14 @@ tibble(db_binary)
 
 We can begin by creating correlation matrix plots to assess if there are any predictors with significant correlation towards our response variable `Diabetes_012`. There are 21 predictors, and therefore, creating one correlation matrix plot would be busy and difficult to understand. Since we are using a correlation matrix plot to investigate the predictors' correlation with the response - and not one another - splitting the variables into three visualizations is appropriate.
 
-```{r corplots}
-first_vars <- db_012[1:8]
-second_vars <- db_012[c(1,9:15)]
-third_vars <- db_012[c(1,16:22)]
-
-# model.matrix(Diabetes_012 ~ ., data=first_vars) %>% 
-#   cor(use="pairwise.complete.obs") %>% 
-#   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
-# 
-# model.matrix(Diabetes_012 ~ ., data=second_vars) %>% 
-#   cor(use="pairwise.complete.obs") %>% 
-#   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
-# 
-# model.matrix(Diabetes_012 ~ ., data=third_vars) %>% 
-#   cor(use="pairwise.complete.obs") %>% 
-#   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
-
-corrplot.mixed(cor(first_vars),
-               lower = "number", 
-               upper = "circle", 
-               tl.pos = "lt")
-corrplot.mixed(cor(second_vars),
-               lower = "number", 
-               upper = "circle", 
-               tl.pos = "lt")
-corrplot.mixed(cor(third_vars),
-               lower = "number", 
-               upper = "circle", 
-               tl.pos = "lt")
-
-# corrplot(cor(db_012[1:8]))
-# corrplot(cor(db_012[c(1,9:15)]))
-# corrplot(cor(db_012[c(1,16:22)]))
+```{r mosaic plots}
+bp_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, HighBP), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "High BP vs. Diabetes Diagnosus")
+  
+bp_mosaic
+  
 ```
 
 From the correlation matrix plots, it seems that there are 12 significant main effects on our response variable `Diabetes_012`. There are nine variables (`HighBP`, `HighChol`, `BMI`, `Stroke`, `HeartDiseaseorAttack`,  `GenHlth`, `PhysHlth`, `DiffWalk`, `Age`) that demonstrate a significant positive correlation with our response, while there are three variables (`PhysActivity`, `Education`, `Income`) with a significant negative correlation.
