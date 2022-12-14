@@ -353,3 +353,11 @@ model <- glmnet(x, y, alpha = 1, family = "binomial", lambda = cv.lasso$lambda.m
 coef(model)
 ```
 
+```{r roc}
+newX <- model.matrix(~.-Diabetes_binary,data=db_binary)
+prob = predict(model, newX, type=c("response"))
+db_binary$prob=prob
+g <- roc(Diabetes_binary ~ prob, data = db_binary)
+plot(g)   
+```
+
