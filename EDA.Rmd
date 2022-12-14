@@ -21,6 +21,7 @@ require(nnet)
 library(car)
 library(glmnet)
 library(pROC)
+library(pscl)
 ```
 
 
@@ -294,6 +295,11 @@ log_model_3 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Strok
 summary(log_model_3)
 ```
 
+```{r log-model-4}
+log_model_4 <- glm(Diabetes_binary ~ HighBP + HighChol + BMI + GenHlth + PhysHlth + DiffWalk + Age + Education + Income + Age * HighBP + Age * HighChol + GenHlth * PhysHlth + Age * DiffWalk, data = db_binary, family = "binomial")
+summary(log_model_4)
+```
+
 ```{r multi-collinearity}
 vif(log_model_1)
 vif(log_model_2)
@@ -318,5 +324,26 @@ plot(cv.lasso)
 ```{r lasso-model}
 model <- glmnet(x, y, alpha = 1, family = "binomial", lambda = cv.lasso$lambda.min)
 coef(model)
+```
+
+```{r roc}
+newX <- model.matrix(~.-Diabetes_binary,data=db_binary)
+prob = predict(model, newX, type=c("response"))
+db_binary$prob=prob
+g <- roc(Diabetes_binary ~ prob, data = db_binary)
+plot(g)   
+```
+
+```{r mcfadden-r2}
+pR2(log_model_1)['McFadden']
+pR2(log_model_2)['McFadden']
+pR2(log_model_3)['McFadden']
+pR2(log_model_4)['McFadden']
+```
+
+```{r tr-te-split}
+sample <- sample(c(TRUE, FALSE), nrow(db_binary), replace=TRUE, prob=c(0.7,0.3))
+train  <- db_binary[sample, ]
+test   <- db_binary[!sample, ]
 ```
 
