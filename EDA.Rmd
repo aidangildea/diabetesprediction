@@ -22,6 +22,8 @@ library(car)
 library(glmnet)
 library(pROC)
 library(pscl)
+library(ggmosaic)
+library(gam)
 ```
 
 
@@ -320,18 +322,23 @@ log_model_1 <- glm(Diabetes_binary ~ ., data = db_binary, family = "binomial")
 summary(log_model_1)
 ```
 
+For this analysis, we will be adopting a p-value threshold of $p-value <= .05$. Therefore,
+we will remove the variables `smoker`, `fruits`, `veggies`, and `NoDocbcCost`. This decision is additionally substantiated by our EDA visualizations, which demonstrated that the proportion of individuals' with a diabetes diagnosis is essentially the same when dependent on these variables (see appendix).
+
 ```{r interactions-log-model}
-log_model_2 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
+log_model_2 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
 summary(log_model_2)
 ```
+Based on our model output, we can see that some of our interaction terms are not statistically significant. These terms (`HighBP*Age`, `HeartDiseaseorAttack:Age`) can therefore be removed from the model building process. 
 
 ```{r larger-interactions-log-model}
-log_model_3 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP + Sex * MentHlth, data = db_binary, family = "binomial")
+log_model_3 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP + Sex * MentHlth, data = db_binary, family = "binomial")
 summary(log_model_3)
 ```
+The model output shows that the interaction term `MentHlth:Sex` is not statistically significant. We will remove it from our model.
 
 ```{r log-model-4}
-log_model_4 <- glm(Diabetes_binary ~ HighBP + HighChol + BMI + GenHlth + PhysHlth + DiffWalk + Age + Education + Income + Age * HighBP + Age * HighChol + GenHlth * PhysHlth + Age * DiffWalk, data = db_binary, family = "binomial")
+log_model_4 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP, data = db_binary, family = "binomial")
 summary(log_model_4)
 ```
 
@@ -339,10 +346,11 @@ summary(log_model_4)
 vif(log_model_1)
 vif(log_model_2)
 vif(log_model_3)
+vif(log_model_4)
 ```
 
 ```{r anova}
-anova(log_model_2, log_model_3, test ="Chisq")
+anova(log_model_1, log_model_2, log_model_3, log_model_4, test ="Chisq")
 #anova(log_model_1)
 #anova(log_model_2)
 #anova(log_model_3)
@@ -386,12 +394,13 @@ test   <- db_binary[!sample, ]
 log_model_orig <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP, data = db_binary, family = "binomial")
 summary(log_model_comp)
 
-log_model_comp <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP, data = db_binary, family = "binomial")
+log_model_comp <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
 summary(log_model_comp)
 
-gam.1 <- gam(Diabetes_binary ~ HighBP + HighChol + CholCheck + s(BMI, df=5) + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP, data = db_binary, family = "binomial")
+gam.1 <- gam(Diabetes_binary ~ HighBP + HighChol + CholCheck + s(BMI, df = 5) + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + s(MentHlth, df=5) + s(PhysHlth, df=5) + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
+
 summary(gam.1)
 plot(gam.1, se = TRUE, col = "blue")
-anova(log_model_orig, log_model_comp, gam.1)
+anova(log_model_comp, gam.1)
 ```
 
