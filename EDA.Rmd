@@ -17,117 +17,256 @@ library(tibble)
 library(ggcorrplot)
 library(tidyverse)
 library(ISLR)
-library(ggmosaic)
 require(nnet)
 library(car)
+library(glmnet)
+library(pROC)
+library(pscl)
 ```
 
 
 Load in the data.
 
-```{r}
-#db_binary <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary.csv")
-#db_5050 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_binary_5050split.csv")
-#db_012 <- read.csv("~/Desktop/STA 325/diabetesprediction/data/diabetes_012.csv")
-
+```{r data}
 db_binary <- read_csv("diabetes_binary.csv")
 db_5050 <- read_csv("diabetes_binary_5050split.csv")
 db_012 <- read_csv("diabetes_012.csv")
+```
 
-#db_binary <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_binary.csv")
-#db_5050 <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_012.csv")
-#db_012 <- read_csv("https://raw.githubusercontent.com/aidangildea/diabetesprediction/main/diabetes_012.csv")
-
+```{r wrangling}
 # Making all categorical variables into factors
-cols <- names(db_binary) %in% c("BMI", "MentHlth", "PhysHlth")
+cols <- names(db_012) %in% c("Age", "BMI", "MentHlth", "PhysHlth", "Education")
 db_binary[!cols] <- data.frame(lapply(db_binary[!cols], factor))
-
 # Coercing `PhysHlth` and "MentHlth` to integer type
 db_binary["PhysHlth"] <- data.frame(lapply(db_binary["PhysHlth"], as.integer))
 db_binary["MentHlth"] <- data.frame(lapply(db_binary["MentHlth"], as.integer))
-tibble(db_binary)
+
+# Checking to see if `Age` groups can be consolidated
+age_check <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Age), fill = Diabetes_binary)) +
+  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Age vs. Diabetes Diagnosis")
+age_check 
+
+# Binning `Age` into less more understandable categories
+db_binary <- db_binary %>%
+  mutate(Age = case_when(
+    Age <= 4 ~ "18-39" ,
+    Age > 4 & Age <=8 ~ "40-59" ,
+    Age > 8 ~ "60+"
+  ))
+
+# Converting `Age` to a Factor
+db_binary["Age"] <- data.frame(lapply(db_binary["Age"], as.factor))
+
+# Checking to see if `Education` groups can be consolidated
+edu_check <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Education), fill = Diabetes_binary)) +
+  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Education vs. Diabetes Diagnosis")
+edu_mosaic
+
+# Binning `Education` into less more understandable categories
+db_binary <- db_binary %>%
+  mutate(Education = case_when(
+    Education <= 3 ~ "Some HighSchool or Less" ,
+    Education == 4 ~ "High School Grad" ,
+    Education == 5 ~ "Some College",
+    Education == 6 ~ "College Graduate"
+  ))
+
+# Converting `Education` to a Factor
+db_binary["Education"] <- data.frame(lapply(db_binary["Education"], as.factor))
+
+db_binary <- db_binary %>%
+  mutate(Education = fct_relevel(Education,"Some HighSchool or Less" ,"High School Grad", "Some College","College Graduate"))
+
 ```
 
 We can begin by creating correlation matrix plots to assess if there are any predictors with significant correlation towards our response variable `Diabetes_012`. There are 21 predictors, and therefore, creating one correlation matrix plot would be busy and difficult to understand. Since we are using a correlation matrix plot to investigate the predictors' correlation with the response - and not one another - splitting the variables into three visualizations is appropriate.
 
 ```{r mosaic plots}
+# HighBP
 bp_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, HighBP), fill = Diabetes_binary)) +
   scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
-  labs(title = "High BP vs. Diabetes Diagnosus")
-  
+  labs(title = "High BP vs. Diabetes Diagnosis")
 bp_mosaic
-  
-```
 
-From the correlation matrix plots, it seems that there are 12 significant main effects on our response variable `Diabetes_012`. There are nine variables (`HighBP`, `HighChol`, `BMI`, `Stroke`, `HeartDiseaseorAttack`,  `GenHlth`, `PhysHlth`, `DiffWalk`, `Age`) that demonstrate a significant positive correlation with our response, while there are three variables (`PhysActivity`, `Education`, `Income`) with a significant negative correlation.
+# HighChol
+chol_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, HighChol), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "High Cholesterol vs. Diabetes Diagnosis")
+chol_mosaic
+
+# CholCheck ---> not valuable, skewed
+chol_check_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, CholCheck), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Cholesterol Check vs. Diabetes Diagnosis")
+chol_check_mosaic
+
+#BMI
+bmi_df <- db_binary %>%
+  group_by(Diabetes_binary) %>%
+  summarize(median=median(BMI))
+
+bmi_mosaic <- ggplot(data = db_binary, mapping = aes(x = BMI, colour = Diabetes_binary)) +
+  geom_freqpoly(binwidth = 1, aes(fill = Diabetes_binary)) +
+  geom_vline(data = bmi_df, aes(xintercept = median, color = Diabetes_binary),
+                                   linetype = "dotted") + 
+  labs(title = "Body Mass Index vs. Diabetes Diagnosis") +
+  scale_colour_manual(values = c("#7EAED2FF", "#EDB687FF"))
+bmi_mosaic 
+
+# Smoker --> not particulary significant
+smoker_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Smoker), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Smoker vs. Diabetes Diagnosis")
+smoker_mosaic
+
+# Stroke --> too skewed
+stroke_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Stroke), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Stroke vs. Diabetes Diagnosis")
+stroke_mosaic
+
+# HeartDiseaseorAttack --> too skewed?
+heart_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, HeartDiseaseorAttack), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Heart Disease/Attack vs. Diabetes Diagnosis")
+heart_mosaic
+
+# PhysActivity --> kind of close?
+phys_act_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, PhysActivity), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Physical Activity vs. Diabetes Diagnosis")
+phys_act_mosaic
+
+# Fruits --> very close
+fruit_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Fruits), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Fruits vs. Diabetes Diagnosis")
+fruit_mosaic
+
+# Veggies --> very close + skewed
+veg_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Veggies), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Veggies vs. Diabetes Diagnosis")
+veg_mosaic
+
+# HvyAlcoholConsump --> very skewed
+alc_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, HvyAlcoholConsump), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Heavy Alcohol Consumption vs. Diabetes Diagnosis")
+alc_mosaic
+
+# AnyHealthcare --> very skewed
+care_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, AnyHealthcare), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Healthcare vs. Diabetes Diagnosis")
+care_mosaic
+
+# NoDocbcCost -->skew
+doc_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, NoDocbcCost), fill = Diabetes_binary)) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "No Doctor/Cost vs. Diabetes Diagnosis")
+doc_mosaic
+
+# GenHlth
+gen_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, GenHlth), fill = Diabetes_binary)) +
+  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "General Health vs. Diabetes Diagnosis")
+gen_mosaic
+
+# MentHlth --> same median, not applicable
+ment_df <- db_binary %>%
+  group_by(Diabetes_binary) %>%
+  summarize(median=median(MentHlth))
+
+ment_mosaic <- ggplot(data = db_binary, mapping = aes(x = MentHlth, colour = Diabetes_binary)) +
+  geom_freqpoly(binwidth = 1) +
+  geom_vline(data = ment_df, aes(xintercept = median, color = Diabetes_binary),
+                                  linetype = "dotted") + 
+  labs(title = "Mental Health vs. Diabetes Diagnosis", x = "Number of Days") +
+  scale_colour_manual(values = c("#7EAED2FF", "#EDB687FF"))
+ment_mosaic 
+
+# PhysHlth --> maybe?
+
+phys_df <- db_binary %>%
+  group_by(Diabetes_binary) %>%
+  summarize(median=median(PhysHlth))
+
+phys_mosaic <- ggplot(data = db_binary, mapping = aes(x = PhysHlth, colour = Diabetes_binary)) +
+  geom_freqpoly(binwidth = 1) +
+  geom_vline(data = phys_df, aes(xintercept = median, color = Diabetes_binary),
+                                  linetype = "dotted") + 
+  labs(title = "Physical Health vs. Diabetes Diagnosis", x = "Number of Days") +
+  scale_colour_manual(values = c("#7EAED2FF", "#EDB687FF"))
+phys_mosaic 
+
+# DiffWalk --> maybe?
+walk_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, DiffWalk), fill = Diabetes_binary)) +
+  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Difficulty Walking vs. Diabetes Diagnosis")
+walk_mosaic
+
+# Sex --> little difference
+sex_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Sex), fill = Diabetes_binary)) +
+  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Sex vs. Diabetes Diagnosis")
+sex_mosaic
+
+# Age 
+age_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Age), fill = Diabetes_binary)) +
+  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Age vs. Diabetes Diagnosis")
+age_mosaic
+
+# Education --> maybe?
+edu_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Education), fill = Diabetes_binary)) +
+  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Education vs. Diabetes Diagnosis") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+edu_mosaic
+
+# Income
+inc_mosaic <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Diabetes_binary, Income), fill = Diabetes_binary)) +
+  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  labs(title = "Income vs. Diabetes Diagnosis")
+inc_mosaic
+```
+Good: HighBP, HighChol, BMI, GenHlth, Age, Education, Income
+Maybe: PhysActivity(slightly skewed),  PhysHlth (skewed but diff), DiffWalk (skewed but diff)
+Bad: CholCheck (too skewed, little obs.), Smoker(very even), Stroke (too skewed, little obs.), HeartDiseaseorAttack (skewed, little obs.), Fruits(very even), Veggies(skewed and little difference), HvyAlcoholConsumpt(very skewed, little diff), AnyHealthcare(very skewed little difference), NoDocbcCost(very skewed, little diff), MentHlth(no diff in median, both 0), Sex(little diff)
+
+From the mosaic plots, it seems that there are 10 significant main effects on our response variable `Diabetes_binary`. These variables (`HighBP`, `HighChol`, `BMI`, `GenHlth`, `Age`, `Education`, `Income`, `PhysActivity`, `PhysHlth`, `DiffWalk`) all demonstrated that the proportion of respondents with a diabetes diagnosis considerably changed when accounted for, meaning it is likely they share some relationship with our response.
+
+The other 11 predictors in our data set do not appear to share a meaningful association with `Diabetes_binary`. Several of the predictors (`CholCheck`, `Stroke`, `HeartDiseaseorAttack`) were skewed towards their baseline (ie. does not apply to the respondent), and therefore, they provide limited observations of individuals having said condition, behavior, or circumstance. Additionally, the variables `Smoker`, `HvyAlcoholConsumption`, `Fruits`, `Veggies`, `HeartDiseaseorAttack`, `AnyHealthcare`, `NoDocbcCost`, `MentHlth`, and `Sex` exhibited little difference in the proportion of respondents of having diabetes vs. not having diabetes when depended on. This indicates that they may have a very weak or no correlation with the response `Diabetes_binary`.
+
+Seeing as the primary focus of our analysis is to identify particular demographics and behaviors that are associated with diabetes, and in turn, make tangible recommendations to prevent its incidence, we find it justifiable to remove these variables from the model building process. This will allow us to construct a more interpretable model that promotes our analysis goals. 
 
 We should validate these assumptions from the correlation matrix plots by developing additional exploratory visualizations between our predictors of interest and the response. 
 
-```{r viz}
-bmi_plot <- ggplot(db_012, aes(factor(Diabetes_012), BMI)) +
-  geom_boxplot() +
-  labs(title = 'Diabetes And BMI', x = "Diabetes_012", y = "BMI")
-bmi_plot
+```{r interaction}
 
-median_df <- db_012 %>%
-  group_by(Diabetes_012) %>%
-  summarize(median=median(BMI))
-
-ggplot(data = db_012, mapping = aes(x = BMI, colour = factor(Diabetes_012))) +
-  geom_freqpoly(binwidth = 1) +
-  geom_vline(data = median_df, aes(xintercept = median, 
-                                       color = factor(Diabetes_012)), linetype = "dotted")
-
-bp_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(HighBP))) +
-  geom_bar(position = "fill") +
-  labs(title = 'Diabetes And HighBP', x = "Diabetes_012", y = "Count", 
-       fill = "HighBP") +
-    scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
-bp_plot
-
-chol_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(HighChol))) +
-  geom_bar(position = "fill") +
-  labs(title = 'Diabetes And HighChol', x = "Diabetes_012", y = "Count", 
-       fill = "HighChol") +
-  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
-chol_plot
-
-stroke_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(Stroke))) +
-  geom_bar(position = "fill") +
-  labs(title = 'Diabetes And Stroke', x = "Diabetes_012", y = "Count", 
-       fill = "Stroke") +
-  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
-stroke_plot
-
-heart_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(HeartDiseaseorAttack))) +
-  geom_bar(position = "fill") +
-  labs(title = 'Diabetes And Heart Disease or Attack', x = "Diabetes_012", y = "Count", 
-       fill = "Heart Disease or Attack") +
-  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
-heart_plot
-
-genhealth_plot <- ggplot(db_012, aes(factor(Diabetes_012), GenHlth)) +
-  geom_boxplot() +
-  labs(title = 'Diabetes And General Health', x = "Diabetes_012", y = "General Health")
-genhealth_plot
-
-physhealth_plot <- ggplot(db_012, aes(factor(Diabetes_012), PhysHlth)) +
-  geom_boxplot() +
-  labs(title = 'Diabetes And Physical Health', x = "Diabetes_012", y = "Physical Health")
-physhealth_plot
-
-diffwalk_plot <- ggplot(db_012, aes(x = factor(Diabetes_012), fill = factor(DiffWalk))) +
-  geom_bar(position = "fill") +
-  labs(title = 'Diabetes And Difficulty Walking', x = "Diabetes_012", y = "Count", 
-       fill = "Difficulty Walking") +
-  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
-diffwalk_plot
-
-age_plot <- ggplot(db_012, aes(factor(Diabetes_012), Age)) +
-  geom_boxplot() +
-  labs(title = 'Diabetes And Age', x = "Diabetes_012", y = "Age")
-age_plot
 ```
 
 Next, we will evaluate whether our continuous variable, BMI, is skewed:
@@ -156,6 +295,11 @@ log_model_3 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Strok
 summary(log_model_3)
 ```
 
+```{r log-model-4}
+log_model_4 <- glm(Diabetes_binary ~ HighBP + HighChol + BMI + GenHlth + PhysHlth + DiffWalk + Age + Education + Income + Age * HighBP + Age * HighChol + GenHlth * PhysHlth + Age * DiffWalk, data = db_binary, family = "binomial")
+summary(log_model_4)
+```
+
 ```{r multi-collinearity}
 vif(log_model_1)
 vif(log_model_2)
@@ -164,9 +308,43 @@ vif(log_model_3)
 
 ```{r anova}
 anova(log_model_2, log_model_3, test ="Chisq")
-anova(log_model_1)
-anova(log_model_2)
-anova(log_model_3)
+#anova(log_model_1)
+#anova(log_model_2)
+#anova(log_model_3)
+```
+
+
+```{r lasso}
+x = as.matrix(select(db_binary, -Diabetes_binary))
+y = as.matrix(db_binary$Diabetes_binary)
+cv.lasso <- cv.glmnet(x, y, alpha = 1, family = "binomial")
+plot(cv.lasso)
+```
+
+```{r lasso-model}
+model <- glmnet(x, y, alpha = 1, family = "binomial", lambda = cv.lasso$lambda.min)
+coef(model)
+```
+
+```{r roc}
+newX <- model.matrix(~.-Diabetes_binary,data=db_binary)
+prob = predict(model, newX, type=c("response"))
+db_binary$prob=prob
+g <- roc(Diabetes_binary ~ prob, data = db_binary)
+plot(g)   
+```
+
+```{r mcfadden-r2}
+pR2(log_model_1)['McFadden']
+pR2(log_model_2)['McFadden']
+pR2(log_model_3)['McFadden']
+pR2(log_model_4)['McFadden']
+```
+
+```{r tr-te-split}
+sample <- sample(c(TRUE, FALSE), nrow(db_binary), replace=TRUE, prob=c(0.7,0.3))
+train  <- db_binary[sample, ]
+test   <- db_binary[!sample, ]
 ```
 
 
