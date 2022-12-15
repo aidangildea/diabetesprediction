@@ -24,6 +24,7 @@ library(pROC)
 library(pscl)
 library(ggmosaic)
 library(gam)
+library(gbm)
 ```
 
 
@@ -39,6 +40,7 @@ db_012 <- read_csv("diabetes_012.csv")
 # Making all categorical variables into factors
 cols <- names(db_012) %in% c("Age", "BMI", "MentHlth", "PhysHlth", "Education")
 db_binary[!cols] <- data.frame(lapply(db_binary[!cols], factor))
+
 # Coercing `PhysHlth` and "MentHlth` to integer type
 db_binary["PhysHlth"] <- data.frame(lapply(db_binary["PhysHlth"], as.integer))
 db_binary["MentHlth"] <- data.frame(lapply(db_binary["MentHlth"], as.integer))
@@ -80,6 +82,7 @@ db_binary <- db_binary %>%
 # Converting `Education` to a Factor
 db_binary["Education"] <- data.frame(lapply(db_binary["Education"], as.factor))
 
+# Organizing levels of `Education` factor
 db_binary <- db_binary %>%
   mutate(Education = fct_relevel(Education,"Some HighSchool or Less" ,"High School Grad", "Some College","College Graduate"))
 
@@ -117,7 +120,7 @@ bmi_df <- db_binary %>%
 bmi_mosaic <- ggplot(data = db_binary, mapping = aes(x = BMI, colour = Diabetes_binary)) +
   geom_freqpoly(binwidth = 1, aes(fill = Diabetes_binary)) +
   geom_vline(data = bmi_df, aes(xintercept = median, color = Diabetes_binary),
-                                   linetype = "dotted") + 
+             linetype = "dotted") + 
   labs(title = "Body Mass Index vs. Diabetes Diagnosis") +
   scale_colour_manual(values = c("#7EAED2FF", "#EDB687FF"))
 bmi_mosaic 
@@ -200,7 +203,7 @@ ment_df <- db_binary %>%
 ment_mosaic <- ggplot(data = db_binary, mapping = aes(x = MentHlth, colour = Diabetes_binary)) +
   geom_freqpoly(binwidth = 1) +
   geom_vline(data = ment_df, aes(xintercept = median, color = Diabetes_binary),
-                                  linetype = "dotted") + 
+             linetype = "dotted") + 
   labs(title = "Mental Health vs. Diabetes Diagnosis", x = "Number of Days") +
   scale_colour_manual(values = c("#7EAED2FF", "#EDB687FF"))
 ment_mosaic 
@@ -214,7 +217,7 @@ phys_df <- db_binary %>%
 phys_mosaic <- ggplot(data = db_binary, mapping = aes(x = PhysHlth, colour = Diabetes_binary)) +
   geom_freqpoly(binwidth = 1) +
   geom_vline(data = phys_df, aes(xintercept = median, color = Diabetes_binary),
-                                  linetype = "dotted") + 
+             linetype = "dotted") + 
   labs(title = "Physical Health vs. Diabetes Diagnosis", x = "Number of Days") +
   scale_colour_manual(values = c("#7EAED2FF", "#EDB687FF"))
 phys_mosaic 
@@ -321,6 +324,13 @@ glimpse(db_binary)
 log_model_1 <- glm(Diabetes_binary ~ ., data = db_binary, family = "binomial")
 summary(log_model_1)
 ```
+```{r}
+backward.step <- step(log_model_1, trace = 0)
+summary(backward.step)
+formula(backward.step)
+```
+
+After performing the backward step selection process, only the predictor `NoDocbcCost` has been removed. 
 
 For this analysis, we will be adopting a p-value threshold of $p-value <= .05$. Therefore,
 we will remove the variables `smoker`, `fruits`, `veggies`, and `NoDocbcCost`. This decision is additionally substantiated by our EDA visualizations, which demonstrated that the proportion of individuals' with a diabetes diagnosis is essentially the same when dependent on these variables (see appendix).
@@ -355,6 +365,7 @@ anova(log_model_1, log_model_2, log_model_3, log_model_4, test ="Chisq")
 #anova(log_model_2)
 #anova(log_model_3)
 ```
+
 ```{r tr-te-split}
 split1 <- sample(c(rep(0, 0.7 * nrow(db_binary)), rep(1, 0.3 * nrow(db_binary))))
 train <- db_binary[split1 == 0, ]
@@ -405,14 +416,21 @@ anova(log_model_comp, gam.1)
 library(gbm)
 set.seed(1)
 boost <- gbm(Diabetes_binary ~.-Diabetes_binary, data = train, 
-                    distribution = "multinomial", n.trees = 500,
-                    interaction.depth = 3)
+             distribution = "multinomial", n.trees = 500,
+             interaction.depth = 3)
 
 yhat.boost <- predict(boost, newdata = test,
                       n.trees = 500, type = "response")
 
 
 summary(boost)
+
+boost_df <- summary(boost)
+ggplot(boost_df, aes(x= var, y = rel.inf)) +
+  geom_point(shape = 17,size = 3, aes(color = var)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
+  labs(title = "Relative Importance of Predictors in Boosted Tree", x = "Predictors", 
+       y= "Relative Inference")
 ```
 ```{r}
 labels <- colnames(yhat.boost)[apply(yhat.boost, 1, which.max)]
