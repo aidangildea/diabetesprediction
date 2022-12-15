@@ -22,6 +22,8 @@ library(car)
 library(glmnet)
 library(pROC)
 library(pscl)
+library(ggmosaic)
+library(gam)
 ```
 
 
@@ -44,7 +46,7 @@ db_binary["MentHlth"] <- data.frame(lapply(db_binary["MentHlth"], as.integer))
 # Checking to see if `Age` groups can be consolidated
 age_check <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Age), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Age vs. Diabetes Diagnosis")
 age_check 
 
@@ -62,7 +64,7 @@ db_binary["Age"] <- data.frame(lapply(db_binary["Age"], as.factor))
 # Checking to see if `Education` groups can be consolidated
 edu_check <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Education), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Education vs. Diabetes Diagnosis")
 edu_mosaic
 
@@ -186,7 +188,7 @@ doc_mosaic
 # GenHlth
 gen_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, GenHlth), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "General Health vs. Diabetes Diagnosis")
 gen_mosaic
 
@@ -220,28 +222,28 @@ phys_mosaic
 # DiffWalk --> maybe?
 walk_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, DiffWalk), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Difficulty Walking vs. Diabetes Diagnosis")
 walk_mosaic
 
 # Sex --> little difference
 sex_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Sex), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Sex vs. Diabetes Diagnosis")
 sex_mosaic
 
 # Age 
 age_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Age), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Age vs. Diabetes Diagnosis")
 age_mosaic
 
 # Education --> maybe?
 edu_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Education), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Education vs. Diabetes Diagnosis") + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 edu_mosaic
@@ -249,10 +251,12 @@ edu_mosaic
 # Income
 inc_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Income), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Income vs. Diabetes Diagnosis")
 inc_mosaic
 ```
+
+
 Good: HighBP, HighChol, BMI, GenHlth, Age, Education, Income
 Maybe: PhysActivity(slightly skewed),  PhysHlth (skewed but diff), DiffWalk (skewed but diff)
 Bad: CholCheck (too skewed, little obs.), Smoker(very even), Stroke (too skewed, little obs.), HeartDiseaseorAttack (skewed, little obs.), Fruits(very even), Veggies(skewed and little difference), HvyAlcoholConsumpt(very skewed, little diff), AnyHealthcare(very skewed little difference), NoDocbcCost(very skewed, little diff), MentHlth(no diff in median, both 0), Sex(little diff)
@@ -265,8 +269,41 @@ Seeing as the primary focus of our analysis is to identify particular demographi
 
 We should validate these assumptions from the correlation matrix plots by developing additional exploratory visualizations between our predictors of interest and the response. 
 
-```{r interaction}
+```{r interactions}
+bp_phys_mos <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(HighBP,Diabetes_binary, PhysActivity), fill = HighBP, alpha = Diabetes_binary)) + 
+  scale_alpha_manual(values =c(.5,.9)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
+  labs(y="Diabetes Diagnosis", x="HighBP:PhysActivity", title = "Interaction Effect Between High BP and Physical Activity ")
+bp_phys_mos
 
+hlth_age_mos <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(GenHlth,Diabetes_binary, Age), fill = GenHlth, alpha = Diabetes_binary)) + 
+  scale_alpha_manual(values =c(.5,.9)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
+  labs(y="Diabetes Diagnosis", x="Age:GenHlth", title = "Interaction Effect Between Age and General Health")
+hlth_age_mos
+
+bp_age_mos <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(HighBP,Diabetes_binary, Age), fill = HighBP, alpha = Diabetes_binary)) + 
+  scale_alpha_manual(values =c(.5,.9)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
+  labs(y="Diabetes Diagnosis", x="HighBP:Age", title = "Interaction Effect Between High BP and Age")
+bp_age_mos
+
+edu_inc_mos <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Education,Diabetes_binary, Income), fill = Education, alpha = Diabetes_binary)) + 
+  scale_alpha_manual(values =c(.5,.9)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
+  labs(y="Diabetes Diagnosis", x="Education:Income", title = "Interaction Effect Between Education and Income")
+edu_inc_mos
+
+age_diff_mos <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(Age,Diabetes_binary, DiffWalk), fill = Age, alpha = Diabetes_binary)) + 
+  scale_alpha_manual(values =c(.5,.9)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
+  labs(y="Diabetes Diagnosis", x="Age:DiffWalk", title = "Interaction Effect Between Age and Difficulty Walking")
+age_diff_mos
 ```
 
 Next, we will evaluate whether our continuous variable, BMI, is skewed:
@@ -285,18 +322,23 @@ log_model_1 <- glm(Diabetes_binary ~ ., data = db_binary, family = "binomial")
 summary(log_model_1)
 ```
 
+For this analysis, we will be adopting a p-value threshold of $p-value <= .05$. Therefore,
+we will remove the variables `smoker`, `fruits`, `veggies`, and `NoDocbcCost`. This decision is additionally substantiated by our EDA visualizations, which demonstrated that the proportion of individuals' with a diabetes diagnosis is essentially the same when dependent on these variables (see appendix).
+
 ```{r interactions-log-model}
-log_model_2 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
+log_model_2 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
 summary(log_model_2)
 ```
+Based on our model output, we can see that some of our interaction terms are not statistically significant. These terms (`HighBP*Age`, `HeartDiseaseorAttack:Age`) can therefore be removed from the model building process. 
 
 ```{r larger-interactions-log-model}
-log_model_3 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP + Sex * MentHlth, data = db_binary, family = "binomial")
+log_model_3 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP + Sex * MentHlth, data = db_binary, family = "binomial")
 summary(log_model_3)
 ```
+The model output shows that the interaction term `MentHlth:Sex` is not statistically significant. We will remove it from our model.
 
 ```{r log-model-4}
-log_model_4 <- glm(Diabetes_binary ~ HighBP + HighChol + BMI + GenHlth + PhysHlth + DiffWalk + Age + Education + Income + Age * HighBP + Age * HighChol + GenHlth * PhysHlth + Age * DiffWalk, data = db_binary, family = "binomial")
+log_model_4 <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP, data = db_binary, family = "binomial")
 summary(log_model_4)
 ```
 
@@ -304,47 +346,59 @@ summary(log_model_4)
 vif(log_model_1)
 vif(log_model_2)
 vif(log_model_3)
+vif(log_model_4)
 ```
 
 ```{r anova}
-anova(log_model_2, log_model_3, test ="Chisq")
+anova(log_model_1, log_model_2, log_model_3, log_model_4, test ="Chisq")
 #anova(log_model_1)
 #anova(log_model_2)
 #anova(log_model_3)
 ```
-
+```{r tr-te-split}
+split1 <- sample(c(rep(0, 0.7 * nrow(db_binary)), rep(1, 0.3 * nrow(db_binary))))
+train <- db_binary[split1 == 0, ]
+test <- db_binary[split1== 1, ]
+```
 
 ```{r lasso}
-x = as.matrix(select(db_binary, -Diabetes_binary))
-y = as.matrix(db_binary$Diabetes_binary)
-cv.lasso <- cv.glmnet(x, y, alpha = 1, family = "binomial")
-plot(cv.lasso)
+x = data.matrix(select(train, -Diabetes_binary))
+y = data.matrix(train$Diabetes_binary)
+#cv.lasso <- cv.glmnet(x, y, alpha = 1, family = "binomial")
+#plot(cv.lasso)
 ```
 
 ```{r lasso-model}
-model <- glmnet(x, y, alpha = 1, family = "binomial", lambda = cv.lasso$lambda.min)
+model <- cv.glmnet(x, y, alpha = 1, family = "binomial")
+#model <- glmnet(x, y, alpha = 1, family = "binomial", lambda = cv.lasso$lambda.min)
 coef(model)
 ```
 
 ```{r roc}
-newX <- model.matrix(~.-Diabetes_binary,data=db_binary)
-prob = predict(model, newX, type=c("response"))
-db_binary$prob=prob
-g <- roc(Diabetes_binary ~ prob, data = db_binary)
-plot(g)   
+x2 = data.matrix(select(test, -Diabetes_binary))
+prob = predict(model, x2, type=c("response"))
+g <- roc(test$Diabetes_binary ~ prob, plot = TRUE, print.auc = TRUE)
+plot(g)
 ```
 
-```{r mcfadden-r2}
-pR2(log_model_1)['McFadden']
-pR2(log_model_2)['McFadden']
-pR2(log_model_3)['McFadden']
-pR2(log_model_4)['McFadden']
+```{r misclassification}
+glm.predict = ifelse(prob>0.5, 1, 0)
+mean(glm.predict != test$Diabetes_binary)
+table(glm.predict, test$Diabetes_binary)
 ```
 
-```{r tr-te-split}
-sample <- sample(c(TRUE, FALSE), nrow(db_binary), replace=TRUE, prob=c(0.7,0.3))
-train  <- db_binary[sample, ]
-test   <- db_binary[!sample, ]
+```{r gam}
+log_model_orig <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP, data = db_binary, family = "binomial")
+summary(log_model_comp)
+
+log_model_comp <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
+summary(log_model_comp)
+
+gam.1 <- gam(Diabetes_binary ~ HighBP + HighChol + CholCheck + s(BMI, df = 5) + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + s(MentHlth, df=5) + s(PhysHlth, df=5) + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
+
+summary(gam.1)
+plot(gam.1, se = TRUE, col = "blue")
+anova(log_model_comp, gam.1)
 ```
 
 ```{r}
