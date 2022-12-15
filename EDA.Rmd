@@ -186,7 +186,7 @@ doc_mosaic
 # GenHlth
 gen_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, GenHlth), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "General Health vs. Diabetes Diagnosis")
 gen_mosaic
 
@@ -220,28 +220,28 @@ phys_mosaic
 # DiffWalk --> maybe?
 walk_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, DiffWalk), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Difficulty Walking vs. Diabetes Diagnosis")
 walk_mosaic
 
 # Sex --> little difference
 sex_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Sex), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Sex vs. Diabetes Diagnosis")
 sex_mosaic
 
 # Age 
 age_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Age), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Age vs. Diabetes Diagnosis")
 age_mosaic
 
 # Education --> maybe?
 edu_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Education), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Education vs. Diabetes Diagnosis") + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 edu_mosaic
@@ -249,10 +249,12 @@ edu_mosaic
 # Income
 inc_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Income), fill = Diabetes_binary)) +
-  #scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
   labs(title = "Income vs. Diabetes Diagnosis")
 inc_mosaic
 ```
+
+
 Good: HighBP, HighChol, BMI, GenHlth, Age, Education, Income
 Maybe: PhysActivity(slightly skewed),  PhysHlth (skewed but diff), DiffWalk (skewed but diff)
 Bad: CholCheck (too skewed, little obs.), Smoker(very even), Stroke (too skewed, little obs.), HeartDiseaseorAttack (skewed, little obs.), Fruits(very even), Veggies(skewed and little difference), HvyAlcoholConsumpt(very skewed, little diff), AnyHealthcare(very skewed little difference), NoDocbcCost(very skewed, little diff), MentHlth(no diff in median, both 0), Sex(little diff)
@@ -266,7 +268,12 @@ Seeing as the primary focus of our analysis is to identify particular demographi
 We should validate these assumptions from the correlation matrix plots by developing additional exploratory visualizations between our predictors of interest and the response. 
 
 ```{r interaction}
-
+mosaic2_examp <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(HighBP,Diabetes_binary, PhysActivity), fill = HighBP, alpha = Diabetes_binary)) + 
+  scale_alpha_manual(values =c(.5,.9)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
+  labs(y="Diabetes Diagnosis", x="HighBP:PhysActivity", title = "Mosaic Plot (3 variables)")
+mosaic2_examp
 ```
 
 Next, we will evaluate whether our continuous variable, BMI, is skewed:
