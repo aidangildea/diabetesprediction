@@ -347,67 +347,31 @@ train  <- db_binary[sample, ]
 test   <- db_binary[!sample, ]
 ```
 
-
-```{r tree}
-# Classification Tree with rpart
-library(rpart) #for fitting decision trees
-library(rpart.plot) #for plotting decision trees
-
-# grow tree
-fit <- rpart(Diabetes_binary ~ . - Diabetes_binary,
-   method="class", data= db_binary)
-
-printcp(fit) # display the results
-plotcp(fit) # visualize cross-validation results
-summary(fit) # detailed summary of splits
-
-# plot tree
-plot(fit, uniform=TRUE,
-   main="Classification Tree for Diabetes")
-text(fit, use.n=TRUE, all=TRUE, cex=.8)
-```
-```{r}
-library(party)
-TreeModel <- ctree(Diabetes_binary ~ . -Diabetes_binary, data = db_binary)
-plot(TreeModel, type= "simple")
-```
-
-```{r}
-library(randomForest)
-set.seed(1)
-rf <- randomForest(Diabetes_binary~.-Diabetes_binary, data = db_binary, 
-                          mtry = 4, importance = TRUE)
-plot(rf)
-```
-
-
-
-
-```{r}
-library(tree)
-tree3 <- tree(Diabetes_binary ~ . - Diabetes_binary, db_binary)
-summary(tree3)
-plot(tree3)
-text(tree3, pretty = 0)
-
-```
 ```{r}
 library(gbm)
 set.seed(1)
-boost <- gbm(Diabetes_binary ~.-Diabetes_binary, data = db_binary, 
-                    distribution = "gaussian", n.trees = 5000,
+boost <- gbm(Diabetes_binary ~.-Diabetes_binary, data = train, 
+                    distribution = "multinomial", n.trees = 500,
                     interaction.depth = 3)
+
+yhat.boost <- predict(boost, newdata = test,
+                      n.trees = 500, type = "response")
+
+
 summary(boost)
 ```
-
-
+```{r}
+labels <- colnames(yhat.boost)[apply(yhat.boost, 1, which.max)]
+result <- data.frame(test$Diabetes_binary, labels)
+```
 
 ```{r}
-age_mosaic <- ggplot(data = db_binary) +
-  geom_mosaic(aes(x=product(Diabetes_binary, Age), fill = Diabetes_binary)) +
-  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
-  labs(title = "Age vs. Diabetes Diagnosis")
-  
-age_mosaic
+result
+
+library(caret)
+cm <- confusionMatrix(test$Diabetes_binary, as.factor(labels))
+print(cm)
 ```
+
+
 
