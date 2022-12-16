@@ -376,6 +376,7 @@ ggplot(boost_df, aes(x= var, y = rel.inf)) +
   labs(title = "Relative Importance of Predictors in Boosted Tree", x = "Predictors", 
        y= "Relative Inference")
 ```
+
 ```{r}
 labels <- colnames(yhat.boost)[apply(yhat.boost, 1, which.max)]
 result <- data.frame(test$Diabetes_binary, labels)
