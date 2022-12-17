@@ -38,7 +38,7 @@ db_012 <- read_csv("diabetes_012.csv")
 
 ```{r wrangling}
 # Making all categorical variables into factors
-cols <- names(db_012) %in% c("Age", "BMI", "MentHlth", "PhysHlth", "Education")
+cols <- names(db_binary) %in% c("Age", "BMI", "MentHlth", "PhysHlth", "Education")
 db_binary[!cols] <- data.frame(lapply(db_binary[!cols], factor))
 
 # Coercing `PhysHlth` and "MentHlth` to integer type
@@ -48,7 +48,11 @@ db_binary["MentHlth"] <- data.frame(lapply(db_binary["MentHlth"], as.integer))
 age_check <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Age), fill = Diabetes_binary)) +
   scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
-  labs(title = "Age vs. Diabetes Diagnosis")
+  labs(title = "Diabetes Diagnoses Increase with Age", caption = "1 = Diabetes, 0 = No Diabetes", y = "Diabetes Diagnosis", legend.title = "Diagnosis") + 
+  theme(text=element_text(size = 12, 
+#       family="Comic Sans MS"))
+#       family="CM Roman"))
+       family="Georgia"))
 age_check 
 # Binning `Age` into less more understandable categories
 db_binary <- db_binary %>%
@@ -63,12 +67,16 @@ db_binary["Age"] <- data.frame(lapply(db_binary["Age"], as.factor))
 edu_check <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Education), fill = Diabetes_binary)) +
   scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
-  labs(title = "Education vs. Diabetes Diagnosis")
-edu_mosaic
+  labs(title = "Diabetes Diagnoses Decrease with Higher Education", caption = "1 = Diabetes, 0 = No Diabetes", y = "Diabetes Diagnosis", x = "Education Level") + 
+  theme(text=element_text(size = 12, 
+#       family="Comic Sans MS"))
+#       family="CM Roman"))
+       family="Georgia"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+edu_check
 # Binning `Education` into less more understandable categories
 db_binary <- db_binary %>%
   mutate(Education = case_when(
-    Education <= 3 ~ "Some HighSchool or Less" ,
+    Education <= 3 ~ "Some High School or Less" ,
     Education == 4 ~ "High School Grad" ,
     Education == 5 ~ "Some College",
     Education == 6 ~ "College Graduate"
@@ -79,7 +87,7 @@ db_binary["Education"] <- data.frame(lapply(db_binary["Education"], as.factor))
 # Organizing levels of `Education` factor
 
 db_binary <- db_binary %>%
-  mutate(Education = fct_relevel(Education,"Some HighSchool or Less" ,"High School Grad", "Some College","College Graduate"))
+  mutate(Education = fct_relevel(Education,"Some High School or Less" ,"High School Grad", "Some College","College Graduate"))
 ```
 
 We can begin by creating correlation matrix plots to assess if there are any predictors with significant correlation towards our response variable `Diabetes_012`. There are 21 predictors, and therefore, creating one correlation matrix plot would be busy and difficult to understand. Since we are using a correlation matrix plot to investigate the predictors' correlation with the response - and not one another - splitting the variables into three visualizations is appropriate.
@@ -89,7 +97,11 @@ We can begin by creating correlation matrix plots to assess if there are any pre
 bp_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, HighBP), fill = Diabetes_binary)) +
   scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
-  labs(title = "High BP vs. Diabetes Diagnosis")
+   labs(title = "Diabetes Diagnoses Increases with High Blood Pressure", caption = "1 = Diabetes, 0 = No Diabetes", y = "Diabetes Diagnosis", x = "High BP", legend.title = "Diagnosis") + 
+  theme(text=element_text( 
+#       family="Comic Sans MS"))
+#       family="CM Roman"))
+       family="Georgia"))
 bp_mosaic
 # HighChol
 chol_mosaic <- ggplot(data = db_binary) +
@@ -110,8 +122,12 @@ bmi_df <- db_binary %>%
 bmi_mosaic <- ggplot(data = db_binary, mapping = aes(x = BMI, colour = Diabetes_binary)) +
   geom_freqpoly(binwidth = 1, aes(fill = Diabetes_binary)) +
   geom_vline(data = bmi_df, aes(xintercept = median, color = Diabetes_binary),
-             linetype = "dotted") + 
-  labs(title = "Body Mass Index vs. Diabetes Diagnosis") +
+             linetype = "dotted", linewidth = 1) + 
+  labs(title = "Diabetes Patients Have Higher BMI on Average", caption = "1 = Diabetes, 0 = No Diabetes", y = "Count", legend.title = "Diagnosis") + 
+  theme(text=element_text( 
+#       family="Comic Sans MS"))
+#       family="CM Roman"))
+       family="Georgia")) +
   scale_colour_manual(values = c("#7EAED2FF", "#EDB687FF"))
 bmi_mosaic 
 # Smoker --> not particulary significant
@@ -212,14 +228,21 @@ sex_mosaic
 age_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Age), fill = Diabetes_binary)) +
   scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
-  labs(title = "Age vs. Diabetes Diagnosis")
+  labs(title = "Diabetes Diagnoses Increase with Age", caption = "1 = Diabetes, 0 = No Diabetes", y = "Diabetes Diagnosis", legend.title = "Diagnosis") + 
+  theme(text=element_text( 
+#       family="Comic Sans MS"))
+#       family="CM Roman"))
+       family="Georgia"))
 age_mosaic
 # Education --> maybe?
 edu_mosaic <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Diabetes_binary, Education), fill = Diabetes_binary)) +
   scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF")) +
-  labs(title = "Education vs. Diabetes Diagnosis") + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  labs(title = "Diabetes Diagnoses Decrease with Higher Education", caption = "1 = Diabetes, 0 = No Diabetes", y = "Diabetes Diagnosis", x = "Education", legend.title = "Diagnosis") + 
+  theme(text=element_text( 
+#       family="Comic Sans MS"))
+#       family="CM Roman"))
+       family="Georgia"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 edu_mosaic
 # Income
 inc_mosaic <- ggplot(data = db_binary) +
@@ -243,30 +266,62 @@ Seeing as the primary focus of our analysis is to identify particular demographi
 We should validate these assumptions from the correlation matrix plots by developing additional exploratory visualizations between our predictors of interest and the response. 
 
 ```{r interactions}
+## NO INTERACTION
 bp_phys_mos <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(HighBP,Diabetes_binary, PhysActivity), fill = HighBP, alpha = Diabetes_binary)) + 
   scale_alpha_manual(values =c(.5,.9)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
   labs(y="Diabetes Diagnosis", x="HighBP:PhysActivity", title = "Interaction Effect Between High BP and Physical Activity ")
 bp_phys_mos
+
+## NO INTERACTION
 hlth_age_mos <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(GenHlth,Diabetes_binary, Age), fill = GenHlth, alpha = Diabetes_binary)) + 
   scale_alpha_manual(values =c(.5,.9)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
   labs(y="Diabetes Diagnosis", x="Age:GenHlth", title = "Interaction Effect Between Age and General Health")
 hlth_age_mos
+
+## USE THIS ONE
 bp_age_mos <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(HighBP,Diabetes_binary, Age), fill = HighBP, alpha = Diabetes_binary)) + 
   scale_alpha_manual(values =c(.5,.9)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
-  labs(y="Diabetes Diagnosis", x="HighBP:Age", title = "Interaction Effect Between High BP and Age")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),text =element_text(family="Georgia")) + 
+  labs(y="Diabetes Diagnosis", x="HighBP:Age", title = "Interaction Effect Between High BP and Age",caption = "1 = Diabetes, 0 = No Diabetes")
 bp_age_mos
+
+## USE THIS ONE
+heart_age_mos <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(HeartDiseaseorAttack,Diabetes_binary, Age), fill = HeartDiseaseorAttack, alpha = Diabetes_binary)) + 
+  scale_alpha_manual(values =c(.5,.9)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
+  labs(y="Diabetes Diagnosis", x="HighBP:Age", title = "Interaction Effect Between Heart Disease/Attack and Age")
+heart_age_mos
+
+# USE THIS ONE
+chol_age_mos <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(HighChol,Diabetes_binary, Age), fill = HighChol, alpha = Diabetes_binary)) + 
+  scale_alpha_manual(values =c(.5,.9)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
+  labs(y="Diabetes Diagnosis", x="HighChol:Age", title = "Interaction Effect Between High Cholesterol and Age")
+chol_age_mos
+
+gen_inc_mos <- ggplot(data = db_binary) +
+  geom_mosaic(aes(x=product(GenHlth,Diabetes_binary, Income), fill = GenHlth, alpha = Diabetes_binary)) + 
+  scale_alpha_manual(values =c(.5,.9)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
+  labs(y="Diabetes Diagnosis", x="GenHlth:Income", title = "Interaction Effect Between General Health and Income")
+gen_inc_mos
+
+## LINKED TO ONE ANOTHER BUT DOESN'T REALLY APPLY
 edu_inc_mos <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Education,Diabetes_binary, Income), fill = Education, alpha = Diabetes_binary)) + 
   scale_alpha_manual(values =c(.5,.9)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
   labs(y="Diabetes Diagnosis", x="Education:Income", title = "Interaction Effect Between Education and Income")
 edu_inc_mos
+
+# NO INTERACTION
 age_diff_mos <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(Age,Diabetes_binary, DiffWalk), fill = Age, alpha = Diabetes_binary)) + 
   scale_alpha_manual(values =c(.5,.9)) +
@@ -388,3 +443,4 @@ library(caret)
 cm <- confusionMatrix(test$Diabetes_binary, as.factor(labels))
 print(cm)
 ```
+
