@@ -1,6 +1,8 @@
 ---
 title: "EDA"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -376,6 +378,24 @@ ggplot(boost_df, aes(x= var, y = rel.inf)) +
   labs(title = "Relative Importance of Predictors in Boosted Tree", x = "Predictors", 
        y= "Relative Inference")
 ```
+```{r}
+library(knitr)
+data.frame(summary(boost)) %>%
+  mutate(`Relative Influence` = `rel.inf`) %>%
+  dplyr::select(`Relative Influence`) %>%
+  tibble::rownames_to_column(var= "Variable") %>% 
+  kable(format = "markdown", digits=3, caption="Relative Variable Influence")
+  
+  
+boost_df <- summary(boost)
+ggplot(boost_df, aes(x= var, y = rel.inf)) +
+  geom_point(shape = 17,size = 3, aes(color = var)) +
+  theme(text = element_text(family = "Georgia"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
+  labs(title = "Relative Importance of Predictors in Boosted Tree", x = "Predictors", 
+       y= "Relative Inference")
+```
+
+
 
 ```{r}
 labels <- colnames(yhat.boost)[apply(yhat.boost, 1, which.max)]
