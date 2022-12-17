@@ -289,7 +289,8 @@ bp_age_mos <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(HighBP,Diabetes_binary, Age), fill = HighBP, alpha = Diabetes_binary)) + 
   scale_alpha_manual(values =c(.5,.9)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),text =element_text(family="Georgia")) + 
-  labs(y="Diabetes Diagnosis", x="HighBP:Age", title = "Interaction Effect Between High BP and Age",caption = "1 = Diabetes, 0 = No Diabetes")
+  labs(y="Diabetes Diagnosis", x="HighBP:Age", title = "Interaction Effect Between High BP and Age",caption = "1 = Diabetes, 0 = No Diabetes") +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
 bp_age_mos
 
 ## USE THIS ONE
@@ -297,7 +298,8 @@ heart_age_mos <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(HeartDiseaseorAttack,Diabetes_binary, Age), fill = HeartDiseaseorAttack, alpha = Diabetes_binary)) + 
   scale_alpha_manual(values =c(.5,.9)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
-  labs(y="Diabetes Diagnosis", x="HighBP:Age", title = "Interaction Effect Between Heart Disease/Attack and Age")
+  labs(y="Diabetes Diagnosis", x="HighBP:Age", title = "Interaction Effect Between Heart Disease/Attack and Age") +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
 heart_age_mos
 
 # USE THIS ONE
@@ -305,7 +307,8 @@ chol_age_mos <- ggplot(data = db_binary) +
   geom_mosaic(aes(x=product(HighChol,Diabetes_binary, Age), fill = HighChol, alpha = Diabetes_binary)) + 
   scale_alpha_manual(values =c(.5,.9)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) + 
-  labs(y="Diabetes Diagnosis", x="HighChol:Age", title = "Interaction Effect Between High Cholesterol and Age")
+  labs(y="Diabetes Diagnosis", x="HighChol:Age", title = "Interaction Effect Between High Cholesterol and Age") +
+  scale_fill_manual(values = c("#7EAED2FF", "#EDB687FF"))
 chol_age_mos
 
 gen_inc_mos <- ggplot(data = db_binary) +
@@ -407,7 +410,7 @@ False negative rate: 1378 / (1378 + 9345) = 12.85 percent
 
 ```{r gam}
 log_model_orig <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + Stroke + HeartDiseaseorAttack + PhysActivity + Fruits + HvyAlcoholConsump + GenHlth + MentHlth + DiffWalk + Sex + Age + Education + Income + Age * HighChol + Age * GenHlth + Sex * GenHlth + Sex * HighBP, data = db_binary, family = "binomial")
-summary(log_model_comp)
+#summary(log_model_comp)
 log_model_comp <- glm(Diabetes_binary ~ HighBP + HighChol + CholCheck + BMI + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + MentHlth + PhysHlth + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
 summary(log_model_comp)
 gam.1 <- gam(Diabetes_binary ~ HighBP + HighChol + CholCheck + s(BMI, df = 5) + Stroke + HeartDiseaseorAttack + PhysActivity + HvyAlcoholConsump + GenHlth + s(MentHlth, df=5) + s(PhysHlth, df=5) + DiffWalk + Sex + Age + Education + Income + Age * HighBP + Age * HeartDiseaseorAttack + Age * HighChol + Age * GenHlth + Sex * GenHlth, data = db_binary, family = "binomial")
